@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Calendar</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 80%;
+            max-width: 1200px;
+            margin: 20px;
+            padding: 20px;
+            border: 1px solid #ccc;
+        }
+        .message {
+            display: none;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 10px;
+            padding: 10px;
+        }
+        #confirmation-message {
+            color: green;
+            background-color: #e0ffe0;
+        }
+        #error-message {
+            color: red;
+            background-color: #ffe0e0;
+        }
+        #enquiry-form {
+            margin-bottom: 20px;
+            background-color: yellow;
+            padding: 20px;
+            border: 1px solid #ccc;
+        }
+        #enquiry-form form div {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        #enquiry-form label {
+            flex: 1;
+        }
+        #enquiry-form input, #enquiry-form select {
+            flex: 2;
+        }
+        #calendar {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .day {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 5px;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            text-align: center;
+        }
+        .day-booked.morning {
+            background-color: #FFD700;
+            color: black;
+        }
+        .day-booked.evening {
+            background-color: #8B0000;
+            color: white;
+        }
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #800000;
+            color: white;
+        }
+        td.booked {
+            background-color: #FF6347;
+            color: white;
+        }
+        button {
+            margin-top: 10px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            font-size: medium;
+        }
+        @media only screen and (max-width: 768px) {
+            .container {
+                width: 90%;
+            }
+            #calendar {
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            }
+        }
+        @media only screen and (max-width: 480px) {
+            #enquiry-form {
+                padding: 10px;
+            }
+            #calendar {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Mandala Pooja Booking Calendar</h1>
+        <div id="messages">
+            <div id="confirmation-message" class="message">Booking Confirmed!</div>
+            <div id="error-message" class="message">This slot is already booked. Please select another date or time.</div>
+        </div>
+        <div id="enquiry-form">
+            <h2>DETAILS OF YOUR BOOKING</h2>
+            <form>
+                <div>
+                    <label for="date">Date:</label>
+                    <input type="date" id="date" name="date">
+                </div>
+                <div>
+                    <label for="time-slot">Time Slot:</label>
+                    <select id="time-slot" name="time-slot">
+                        <option value="morning">Morning (8am - 11am)</option>
+                        <option value="evening">Evening (4pm - 6pm)</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="name">Name:</label>
+                    <input type="text" id="name" name="name">
+                </div>
+                <div>
+                    <label for="place">Place:</label>
+                    <input type="text" id="place" name="place">
+                </div>
+                <button type="button" onclick="makeBooking()">MAKE BOOKING ENQUIRY</button>
+            </form>
+        </div>
+        <div id="calendar">
+            <!-- Calendar days will be generated here -->
+        </div>
+        <div id="booking-info">
+            <h2>Booking Information</h2>
+            <table>
+                <tr>
+                    <th>Date</th>
+                    <th>Morning Slot (8am - 11am)</th>
+                    <th>Morning Name</th>
+                    <th>Morning Place</th>
+                    <th>Evening Slot (4pm - 6pm)</th>
+                    <th>Evening Name</th>
+                    <th>Evening Place</th>
+                </tr>
+                <!-- Booking info will be added here dynamically -->
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Initialize bookings array from localStorage if available
+        let bookings = JSON.parse(localStorage.getItem('bookings')) || [];
+
+        function makeBooking() {
+            const inputDate = new Date(document.getElementById('date').value);
+            const currentDate = new Date();
+
+            // Check if date is in the past
+            if (inputDate < currentDate) {
+                alert('Please select a date from tomorrow onwards.');
+                return;
+            }
+
+            const date = inputDate.toISOString().split('T')[0];
+            const timeSlot = document.getElementById('time-slot').value;
+            const name = document.getElementById('name').value;
+            const place = document.getElementById('place').value;
+
+            if (!date || !timeSlot || !name || !place) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            // Check if the slot is already booked
+            const existingBooking = bookings.find(booking => booking.date === date);
+
+            if (existingBooking) {
+                if (existingBooking[timeSlot]) {
+                    showMessage('error');
+                    return;
+                } else {
+                    existingBooking[timeSlot] = { name, place };
+                }
+            } else {
+                const newBooking = { date };
+                newBooking[timeSlot] = { name, place };
+                bookings.push(newBooking);
+            }
+
+            // Save bookings to localStorage
+            localStorage.setItem('bookings', JSON.stringify(bookings));
+
+            updateBookingTable();
+            updateCalendar();
+            showMessage('confirmation');
+        }
+
+        function showMessage(type) {
+            const confirmationMessage = document.getElementById('confirmation-message');
+            const errorMessage = document.getElementById('error-message');
+            if (type === 'confirmation') {
+                confirmationMessage.style.display = 'block';
+                errorMessage.style.display = 'none';
+                setTimeout(() => {
+                    confirmationMessage.style.display = 'none';
+                }, 3000);
+            } else if (type === 'error') {
+                errorMessage.style.display = 'block';
+                confirmationMessage.style.display = 'none';
+                setTimeout(() => {
+                    errorMessage.style.display = 'none';
+                }, 3000);
+            }
+        }
+
+       function updateBookingTable() {
+    const bookingInfoTable = document.querySelector('#booking-info table');
+    // Clear existing table rows
+    bookingInfoTable.innerHTML = `
+        <tr>
+            <th>Date</th>
+            <th>Morning Slot (8am - 11am)</th>
+            <th>Morning Name</th>
+            <th>Morning Place</th>
+            <th>Evening Slot (4pm - 6pm)</th>
+            <th>Evening Name</th>
+            <th>Evening Place</th>
+        </tr>
+    `;
+    
+    // Sort bookings by date ascending
+    bookings.sort((a, b) => new Date(a.date) - new Date(b.date));
+    
+    // Render rows for each booking
+    bookings.forEach(booking => {
+        const date = new Date(booking.date);
+        if (!isNaN(date)) { // Check if the date is valid
+            const formattedDate = date.toLocaleDateString('en-GB');
+            const newRow = document.createElement('tr');
+            newRow.innerHTML = `
+                <td>${formattedDate}</td>
+                <td class="${booking.morning ? 'booked' : ''}">${booking.morning ? 'Booked' : ''}</td>
+                <td class="${booking.morning ? 'booked' : ''}">${booking.morning ? booking.morning.name : ''}</td>
+                <td class="${booking.morning ? 'booked' : ''}">${booking.morning ? booking.morning.place : ''}</td>
+                <td class="${booking.evening ? 'booked' : ''}">${booking.evening ? 'Booked' : ''}</td>
+                <td class="${booking.evening ? 'booked' : ''}">${booking.evening ? booking.evening.name : ''}</td>
+                <td class="${booking.evening ? 'booked' : ''}">${booking.evening ? booking.evening.place : ''}</td>
+            `;
+            bookingInfoTable.appendChild(newRow);
+        }
+    });
+}
+
+        function updateCalendar() {
+            const calendar = document.getElementById('calendar');
+            calendar.innerHTML = '';
+            const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+            for (let i = 1; i <= daysInMonth; i++) {
+                const date = new Date(new Date().getFullYear(), new Date().getMonth(), i).toISOString().split('T')[0];
+                const booking = bookings.find(booking => booking.date === date);
+                const dayDiv = document.createElement('div');
+                dayDiv.className = 'day';
+                dayDiv.setAttribute('data-date', date);
+                const morningInfo = booking && booking.morning ? `${booking.morning.name}, ${booking.morning.place}` : '';
+                const eveningInfo = booking && booking.evening ? `${booking.evening.name}, ${booking.evening.place}` : '';
+                dayDiv.innerHTML = `
+                    <div>${new Date(date).toLocaleDateString('en-GB', { weekday: 'short' })}</div>
+                    <div>${new Date(date).toLocaleDateString('en-GB')}</div>
+                    <div class="morning ${booking && booking.morning ? 'day-booked morning' : ''}">Morning<br>${morningInfo}</div>
+                    <div class="evening ${booking && booking.evening ? 'day-booked evening' : ''}">Evening<br>${eveningInfo}</div>
+                `;
+                calendar.appendChild(dayDiv);
+            }
+        }
+
+        // Load bookings from localStorage on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            updateCalendar();
+            loadBookings();
+        });
+
+        function loadBookings() {
+            const storedBookings = JSON.parse(localStorage.getItem('bookings'));
+            if (storedBookings) {
+                bookings = storedBookings;
+                updateBookingTable();
+                updateCalendar();
+            }
+        }
+    </script>
+  <!-- Add this link/button where appropriate in your booking calendar page -->
+<a href="https://sites.google.com/d/1TW1vrHRU9ww00QRDbFLkCTMkfOT7vuRJ/p/1X2FwtOy2kXmxuqg8K4yUDjnDh0iAfzZR/edit/admin.html">Admin Panel</a>
+
+</body>
+</html>

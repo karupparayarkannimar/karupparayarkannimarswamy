@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Calendar Admin</title>
+    <style>
+        /* Global styles */
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px; /* Adjust max-width as needed */
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #800000; /* Maroon */
+            color: white;
+        }
+
+        td.booked {
+            background-color: #FF6347; /* Red */
+            color: white;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 5px;
+        }
+
+        .button-container button {
+            font-size: medium;
+            padding: 5px 10px;
+        }
+
+        /* Responsive design */
+        @media only screen and (max-width: 768px) {
+            /* For tablets and smaller screens */
+            .container {
+                padding: 10px;
+            }
+
+            table {
+                font-size: 14px;
+            }
+
+            .button-container {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .button-container button {
+                margin-top: 5px;
+            }
+        }
+
+        @media only screen and (max-width: 480px) {
+            /* For mobile phones */
+            th, td {
+                padding: 5px;
+            }
+
+            .button-container {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .button-container button {
+                margin-top: 5px;
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Booking Calendar Admin</h1>
+        <table id="admin-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Morning Slot</th>
+                    <th>Morning Name</th>
+                    <th>Morning Place</th>
+                    <th>Evening Slot</th>
+                    <th>Evening Name</th>
+                    <th>Evening Place</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Booking data will be added here dynamically -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // Load bookings from localStorage
+        let bookings = JSON.parse(localStorage.getItem('bookings')) || [];
+
+        function populateAdminTable() {
+            // Sort bookings array by date in ascending order
+            bookings.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            const adminTableBody = document.querySelector('#admin-table tbody');
+            adminTableBody.innerHTML = '';
+            bookings.forEach(booking => {
+                if (!booking.date) return; // Skip invalid dates
+
+                const formattedDate = new Date(booking.date).toLocaleDateString('en-GB');
+                const newRow = document.createElement('tr');
+                newRow.innerHTML = `
+                    <td>${formattedDate}</td>
+                    <td class="${booking.morning ? 'booked' : ''}">${booking.morning ? 'Booked' : ''}</td>
+                    <td class="${booking.morning ? 'booked' : ''}">${booking.morning ? booking.morning.name : ''}</td>
+                    <td class="${booking.morning ? 'booked' : ''}">${booking.morning ? booking.morning.place : ''}</td>
+                    <td class="${booking.evening ? 'booked' : ''}">${booking.evening ? 'Booked' : ''}</td>
+                    <td class="${booking.evening ? 'booked' : ''}">${booking.evening ? booking.evening.name : ''}</td>
+                    <td class="${booking.evening ? 'booked' : ''}">${booking.evening ? booking.evening.place : ''}</td>
+                    <td>
+                        <div class="button-container">
+                            <button onclick="editMorningBooking('${booking.date}')">Edit Morning</button>
+                            <button onclick="editEveningBooking('${booking.date}')">Edit Evening</button>
+                        </div>
+                        <div class="button-container">
+                            <button onclick="deleteMorningBooking('${booking.date}')">Delete Morning</button>
+                            <button onclick="deleteEveningBooking('${booking.date}')">Delete Evening</button>
+                        </div>
+                    </td>
+                `;
+                adminTableBody.appendChild(newRow);
+            });
+        }
+
+        function editMorningBooking(date) {
+            const bookingToEdit = bookings.find(booking => booking.date === date);
+            if (!bookingToEdit || !bookingToEdit.morning) {
+                alert('Morning booking not found!');
+                return;
+            }
+
+            const newMorningName = prompt('Enter new morning name:', bookingToEdit.morning.name || '');
+            if (newMorningName !== null) {
+                bookingToEdit.morning.name = newMorningName;
+            }
+
+            const newMorningPlace = prompt('Enter new morning place:', bookingToEdit.morning.place || '');
+            if (newMorningPlace !== null) {
+                bookingToEdit.morning.place = newMorningPlace;
+            }
+
+            localStorage.setItem('bookings', JSON.stringify(bookings));
+            populateAdminTable();
+        }
+
+        function editEveningBooking(date) {
+            const bookingToEdit = bookings.find(booking => booking.date === date);
+            if (!bookingToEdit || !bookingToEdit.evening) {
+                alert('Evening booking not found!');
+                return;
+            }
+
+            const newEveningName = prompt('Enter new evening name:', bookingToEdit.evening.name || '');
+            if (newEveningName !== null) {
+                bookingToEdit.evening.name = newEveningName;
+            }
+
+            const newEveningPlace = prompt('Enter new evening place:', bookingToEdit.evening.place || '');
+            if (newEveningPlace !== null) {
+                bookingToEdit.evening.place = newEveningPlace;
+            }
+
+            localStorage.setItem('bookings', JSON.stringify(bookings));
+            populateAdminTable();
+        }
+
+        function deleteMorningBooking(date) {
+            const bookingToEdit = bookings.find(booking => booking.date === date);
+            if (bookingToEdit && bookingToEdit.morning) {
+                delete bookingToEdit.morning;
+
+                // Check if both morning and evening are deleted
+                if (!bookingToEdit.evening) {
+                    const index = bookings.indexOf(bookingToEdit);
+                    bookings.splice(index, 1);
+                }
+
+                localStorage.setItem('bookings', JSON.stringify(bookings));
+                populateAdminTable();
+            } else {
+                alert('Morning booking not found!');
+            }
+        }
+
+        function deleteEveningBooking(date) {
+            const bookingToEdit = bookings.find(booking => booking.date === date);
+            if (bookingToEdit && bookingToEdit.evening) {
+                delete bookingToEdit.evening;
+
+                // Check if both morning and evening are deleted
+                if (!bookingToEdit.morning) {
+                    const index = bookings.indexOf(bookingToEdit);
+                    bookings.splice(index, 1);
+                }
+
+                localStorage.setItem('bookings', JSON.stringify(bookings));
+                populateAdminTable();
+            } else {
+                alert('Evening booking not found!');
+            }
+        }
+
+        // Initialize admin table on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            populateAdminTable();
+        });
+    </script>
+</body>
+</html>
